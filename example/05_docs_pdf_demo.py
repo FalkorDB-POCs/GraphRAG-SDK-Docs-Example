@@ -4,8 +4,7 @@ GraphRAG SDK v2 -- Multi-PDF docs/ Demo
 Ingest all PDF files from a docs/ folder, finalize once, then run a fixed
 20-question benchmark over the combined graph.
 Run from repo root (recommended):
-    /Users/shaharbiron/Documents/FalkorDB/Poc/graphrag-v2
-
+    /where-you-cloned/GraphRAG-SDK-Docs-Example-repo/
 Prerequisites:
     pip install -e "./GraphRAG-SDK/graphrag_sdk[pdf,litellm]"
     docker run -p 6379:6379 falkordb/falkordb
