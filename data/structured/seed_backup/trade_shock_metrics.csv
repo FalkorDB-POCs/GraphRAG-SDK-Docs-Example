@@ -1,0 +1,7 @@
+metric_id,metric_name,policy_event,geography,value_num,value_unit,sample_note,source_doc
+TM-ICEBERG,Iceberg trade cost reduction from China WTO accession,China WTO accession,China,13.0,percent,Baseline estimate that WTO accession reduces iceberg trade cost by around 13 percent,2603.23825v1.pdf
+TM-ICEBERG-ALT,Iceberg trade cost reduction robustness estimate,China WTO accession,China,13.5,percent,Alternate reported decrease of iceberg trade cost near 13.5 percent in robustness discussion,2603.23825v1.pdf
+TM-CES-DOM,CES preference parameter domestic market,China WTO accession,China,4.0,elasticity,Estimated CES preference parameter for the domestic market,2603.23825v1.pdf
+TM-CES-EXP,CES preference parameter export market,China WTO accession,China,2.5,elasticity,Estimated CES preference parameter for the export market,2603.23825v1.pdf
+TM-EXIT,Firm exit probability in sample,China WTO accession,China,0.08,probability,Estimated firm exit probability reported for the empirical sample,2603.23825v1.pdf
+TM-PROC-ROBUST,Processing-trade exclusion robustness,China WTO accession,China,1.0,flag,Robustness test excludes processing-trade firms; main cost-pattern result remains,2603.23825v1.pdf
