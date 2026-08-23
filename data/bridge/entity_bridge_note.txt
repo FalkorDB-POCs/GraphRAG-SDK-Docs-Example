@@ -1,0 +1,34 @@
+Bridge note for hybrid GraphRAG demo (unstructured text).
+
+This note repeats canonical entity names that also appear in the structured
+CSV tables and in the PDF corpus under docs/, so exact-name resolution can
+merge the two halves of the graph.
+
+Carbon farming survey practices:
+- Alternate Wetting and Drying (AWD) is a rice water-management practice that
+  alternately wets and dries fields, reducing continuous flooding and methane.
+- System of Rice Intensification (SRI) changes plant spacing, water, and soil
+  management in rice systems and is discussed as a methane- and water-saving
+  approach.
+- Green Cane Trash Blanketing (GCTB) keeps sugarcane residue on the field as a
+  trash blanket instead of burning it, supporting soil organic carbon.
+- Carbon Farming is the umbrella set of agricultural best practices for
+  sequestration and emission reduction. MRV means Monitoring, Reporting, and
+  Verification.
+
+Trade liberalization paper entities:
+- China WTO accession is the policy event used as the trade-liberalization
+  shock. The study estimates iceberg trade cost reductions and CES preference
+  parameters for domestic and export markets, and discusses processing-trade
+  robustness and firm exit probability in the empirical sample.
+
+Electricity and carbon market-design paper entities:
+- Austria 2025 baseline carbon-electricity expenditure reduction and
+  Germany 2025 baseline carbon-electricity expenditure reduction are country
+  baselines in the simulation year 2025.
+- Hard price threshold activation rule creates bunching incentives around the
+  activation point.
+- Linear phase-in ramp of the deduction mitigates threshold bunching.
+- Proposed settlement deduction rule for carbon-cost pass-through is the
+  settlement mechanism intended to reduce consumer exposure to carbon-cost
+  pass-through.

@@ -1,0 +1,6 @@
+scenario_id,scenario_name,country,year,expenditure_reduction_pct,mechanism,bunching_risk,source_doc
+SC-AT-2025,Austria 2025 baseline carbon-electricity expenditure reduction,Austria,2025,8.5,settlement_deduction,low,2603.25874v1.pdf
+SC-DE-2025,Germany 2025 baseline carbon-electricity expenditure reduction,Germany,2025,4.7,settlement_deduction,low,2603.25874v1.pdf
+SC-HARD-THRESHOLD,Hard price threshold activation rule,EU,2025,0.0,hard_threshold,high,2603.25874v1.pdf
+SC-LINEAR-RAMP,Linear phase-in ramp of the deduction,EU,2025,0.0,linear_ramp,low,2603.25874v1.pdf
+SC-SETTLEMENT,Proposed settlement deduction rule for carbon-cost pass-through,EU,2025,0.0,settlement_deduction,low,2603.25874v1.pdf

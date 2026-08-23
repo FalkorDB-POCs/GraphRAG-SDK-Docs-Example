@@ -1,0 +1,5 @@
+practice_id,practice_name,crop_system,ch4_reduction_min_pct,ch4_reduction_max_pct,water_saving_min_pct,water_saving_max_pct,soil_carbon_benefit,mrv_intensity,source_doc
+PR-AWD,Alternate Wetting and Drying (AWD),rice,30.0,50.0,20.0,30.0,Improved aeration reduces continuous anaerobic methanogenesis,high,2603.20674v1.pdf
+PR-SRI,System of Rice Intensification (SRI),rice,40.0,60.0,25.0,50.0,Soil carbon sequestration reported around 12.58 to 49.51 tCO2e/ha in survey evidence,high,2603.20674v1.pdf
+PR-GCTB,Green Cane Trash Blanketing (GCTB),sugarcane,,,10.0,20.0,Retains green cane residue as a trash blanket; improves soil organic carbon and reduces burning-related emissions,medium,2603.20674v1.pdf
+PR-CF,Carbon Farming,multi-crop,,,15.0,35.0,Portfolio of agricultural best practices for sequestration and emission reduction across cropland,high,2603.20674v1.pdf
