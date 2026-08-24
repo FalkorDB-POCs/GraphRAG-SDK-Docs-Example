@@ -36,6 +36,7 @@ from graphrag_sdk import (
     Column,
     ConnectionConfig,
     GraphRAG,
+    Link,
     LiteLLM,
     LiteLLMEmbedder,
     Table,
@@ -202,38 +203,43 @@ MITIGATION_PRACTICES = Table(
     "MitigationPractice",
     key="practice_id",
     name="practice_name",
-    crop_system="crop_system",
+    crop_system=Column("crop_system"),
     ch4_reduction_min_pct=Column("ch4_reduction_min_pct", "FLOAT"),
     ch4_reduction_max_pct=Column("ch4_reduction_max_pct", "FLOAT"),
     water_saving_min_pct=Column("water_saving_min_pct", "FLOAT"),
     water_saving_max_pct=Column("water_saving_max_pct", "FLOAT"),
-    soil_carbon_benefit="soil_carbon_benefit",
-    mrv_intensity="mrv_intensity",
-    source_doc="source_doc",
+    soil_carbon_benefit=Column("soil_carbon_benefit"),
+    mrv_intensity=Column("mrv_intensity"),
+    source_doc=Column("source_doc"),
 )
 
+# `geography` holds "China", which appears verbatim in the trade paper, so this
+# link joins the table to the PDF directly. The long `metric_name` values never
+# will: they are phrases written for the CSV, not phrases in the paper.
 TRADE_METRICS = Table(
     "TradeMetric",
     key="metric_id",
     name="metric_name",
-    policy_event="policy_event",
-    geography="geography",
+    policy_event=Column("policy_event"),
     value_num=Column("value_num", "FLOAT"),
-    value_unit="value_unit",
-    sample_note="sample_note",
-    source_doc="source_doc",
+    value_unit=Column("value_unit"),
+    sample_note=Column("sample_note"),
+    source_doc=Column("source_doc"),
+    links=[Link("MEASURED_IN", to="Location", by="geography")],
 )
 
+# Same idea: `country` holds Austria / Germany / EU, all present in the
+# market-design paper.
 POLICY_SCENARIOS = Table(
     "PolicyScenario",
     key="scenario_id",
     name="scenario_name",
-    country="country",
     year=Column("year", "INTEGER"),
     expenditure_reduction_pct=Column("expenditure_reduction_pct", "FLOAT"),
-    mechanism="mechanism",
-    bunching_risk="bunching_risk",
-    source_doc="source_doc",
+    mechanism=Column("mechanism"),
+    bunching_risk=Column("bunching_risk"),
+    source_doc=Column("source_doc"),
+    links=[Link("APPLIES_TO", to="Location", by="country")],
 )
 
 
@@ -266,6 +272,14 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=root / "data" / "bridge" / "entity_bridge_note.txt",
         help="Optional unstructured bridge note with canonical entity names.",
+    )
+    parser.add_argument(
+        "--structured-first",
+        action="store_true",
+        help=(
+            "Ingest the CSVs before the PDFs. The graph should come out the same "
+            "either way; this is here to prove it."
+        ),
     )
     parser.add_argument(
         "--skip-bridge-note",
@@ -877,6 +891,44 @@ async def run_cypher_assertions(
     return checks
 
 
+async def assert_halves_are_joined(rag: GraphRAG, finalize_result: Any) -> dict[str, Any]:
+    """Fail loudly when no entity is reachable from both a table and a document.
+
+    The whole claim of this demo is one graph rather than two sharing a database,
+    and that claim can fail while every question still answers plausibly: the
+    Cypher rows and the prose chunks both reach the model's context separately.
+    Without this check the run reports success and proves nothing.
+    """
+    print("\n[assert] are the two halves actually joined?")
+    bridged = await rag.query(
+        "MATCH (e:__Entity__)-[:MENTIONED_IN]->(:Chunk)<-[:PART_OF]-(d:Document) "
+        "WITH e, collect(DISTINCT d.id) AS docs "
+        "WHERE size(docs) > 1 "
+        "RETURN e.name AS name, docs ORDER BY name"
+    )
+    collisions = getattr(finalize_result, "unmerged_name_collisions", {}) or {}
+
+    for name, docs in bridged:
+        print(f"  joined: {name}")
+        print(f"          {[Path(d).name for d in docs]}")
+    if collisions:
+        print(f"  {len(collisions)} name(s) left under more than one label:")
+        for name, labels in sorted(collisions.items())[:5]:
+            print(f"          {name!r} as {' and '.join(labels)}")
+
+    ok = bool(bridged)
+    print(f"  RESULT: {len(bridged)} entity/entities span more than one source "
+          f"-> {'PASS' if ok else 'FAIL'}")
+    if not ok:
+        print(
+            "  FAIL means the tables and the documents are two disconnected graphs. "
+            "Check that a CSV name or a linked column value appears verbatim in the "
+            "PDFs; only exact matches join.",
+            file=sys.stderr,
+        )
+    return {"bridged": bridged, "unmerged_name_collisions": collisions, "passed": ok}
+
+
 async def diagnose_entity_merge(rag: GraphRAG) -> dict[str, Any]:
     """Inspect why finalize() may report entities_deduplicated=0."""
     print("\n[diagnose] entity merge / alias bridge")
@@ -1106,6 +1158,13 @@ async def main_async(args: argparse.Namespace) -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"[reset] warning: {exc}", file=sys.stderr)
 
+    # Order is a demonstrable property, not a requirement. The SDK lets a
+    # declared label absorb a guessed one, so a table and a document join
+    # whichever arrives first. This flag exists to show that, not to fix it.
+    structured_results: list[dict[str, Any]] = []
+    if args.structured_first:
+        structured_results = await ingest_structured(rag, csv_sources)
+
     pdf_ok, pdf_failed = await ingest_pdfs(rag, pdf_paths)
     if not pdf_ok:
         print("\nNo PDFs were ingested successfully. Aborting.", file=sys.stderr)
@@ -1136,7 +1195,8 @@ async def main_async(args: argparse.Namespace) -> int:
     else:
         bridge_status = {"skipped": True}
 
-    structured_results = await ingest_structured(rag, csv_sources)
+    if not args.structured_first:
+        structured_results = await ingest_structured(rag, csv_sources)
 
     print("\n[finalize] running once after all ingestions...")
     try:
@@ -1147,6 +1207,7 @@ async def main_async(args: argparse.Namespace) -> int:
         print(f"[finalize] failed: {exc}", file=sys.stderr)
         return 1
 
+    bridge_check = await assert_halves_are_joined(rag, finalize_result)
     merge_diagnostics = await diagnose_entity_merge(rag)
 
     ontology = await ontology_snapshot(rag)
@@ -1225,6 +1286,7 @@ async def main_async(args: argparse.Namespace) -> int:
                 "structured": structured_results,
             },
             "finalize": finalize_payload,
+            "bridge_check": bridge_check,
             "merge_diagnostics": merge_diagnostics,
             "ontology": ontology,
             "pdf_baseline_questions": pdf_answers,

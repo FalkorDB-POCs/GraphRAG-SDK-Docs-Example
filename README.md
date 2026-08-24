@@ -9,8 +9,10 @@ This repository is intentionally small and includes:
 - `example/06_hybrid_docs_structured_demo.py` — hybrid PDF + CSV demo
 
 `GraphRAG-SDK` is **not** vendored here. For the hybrid demo you need the
-local **`feat/structured-ingestion`** branch (structured `mapping=` path +
-`CsvRecordLoader`). The pure PDF demo can still run on `main`.
+**`feat/structured-ingestion`** branch (structured `mapping=` path, `Table` /
+`Link`, `CsvRecordLoader`). The pure PDF demo can still run on `main`.
+
+See `CHANGES.md` for what changed in this revision and why.
 
 ## Layout
 
@@ -96,9 +98,11 @@ This ingests:
 2. optional bridge note (`data/bridge/entity_bridge_note.txt`)
 3. three CSVs via declared `Table` mappings (built-in engine: **CSV only**)
 4. `finalize()` once (merges structured + prose entities when names align)
-5. optional pure-PDF sample questions
-6. **10 hybrid-oriented questions** (2 structured-only + 8 hybrid)
-7. Cypher gold assertions over typed columns
+5. **an assertion that the two halves actually joined**, which fails the run
+   when no entity is reachable from both a table and a document
+6. optional pure-PDF sample questions
+7. **10 hybrid-oriented questions** (2 structured-only + 8 hybrid)
+8. Cypher gold assertions over typed columns
 
 ```zsh
 python3 example/06_hybrid_docs_structured_demo.py \
@@ -114,6 +118,8 @@ python3 example/06_hybrid_docs_structured_demo.py \
 Useful flags:
 
 - `--pdf-questions none|sample|all` — pure-PDF baseline set
+- `--structured-first` — load the CSVs before the PDFs. The graph comes out
+  joined either way; the flag is there to show that rather than assert it
 - `--skip-bridge-note` — skip the unstructured name-bridge text
 - `--host` / `--port` — FalkorDB endpoint (defaults `localhost:6379`)
 
@@ -123,17 +129,19 @@ GraphRAG-SDK structured ingestion ships **`CsvRecordLoader` only** (delimiter
 sniff: comma, semicolon, tab, pipe). Parquet/SQL/etc. require a custom
 `RecordLoaderStrategy`.
 
-### Why the CSVs match the PDFs
+### How the CSVs join the PDFs
 
-Display names reuse paper wording so resolution can bridge halves, e.g.:
+Only exact matches join, so two things join the halves:
 
-- `Alternate Wetting and Drying (AWD)`
-- `System of Rice Intensification (SRI)`
-- `Green Cane Trash Blanketing (GCTB)`
-- `China WTO accession` / iceberg trade-cost metrics
-- Austria / Germany 2025 expenditure scenarios, hard threshold, linear ramp
+- **Names that appear verbatim in a paper.** True for three of the four
+  practices (`Alternate Wetting and Drying (AWD)`, `Green Cane Trash Blanketing
+  (GCTB)`, `Carbon Farming`). Not true for any trade metric or policy scenario:
+  those display names were written for the CSV.
+- **A `Link` on a short column that does appear.** `geography` holds `China` and
+  `country` holds `Austria` / `Germany` / `EU`, all present in the papers, so
+  those become real edges from the table into the extracted entity.
 
-See `data/structured/README.md`.
+See `data/structured/README.md` for the per-file breakdown.
 
 ## Troubleshooting
 
@@ -150,3 +158,7 @@ See `data/structured/README.md`.
 - Structured Cypher assertions fail  
   Confirm CSV ingest logs succeeded and `enable_cypher=True` is set (the hybrid
   script sets this automatically).
+- `[assert] ... -> FAIL`  
+  The tables and the documents are two disconnected graphs. Check that a CSV
+  name, or a value in a linked column, appears verbatim in the PDFs. Only exact
+  matches join.
